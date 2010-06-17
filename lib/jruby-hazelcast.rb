@@ -21,6 +21,9 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
+require 'rubygems'
+require 'active_support'
+
 $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
 if defined?(JRUBY_VERSION)
@@ -35,18 +38,57 @@ module ActiveSupport
 
   module Cache
 
-    class HazelcastCacheStore
+    class HazelcastCacheStore < Store
       
+      attr_accessor :app_root, :hostname, :username, :password
+
       class << self; attr_accessor :instance; end
       class CacheException  < StandardError; end
 
-      def initialize
-        @client = HazelcastClient.newHazelcastClient("dev", "dev-pass", "192.168.1.3:5701");
-        @map  = @client.getMap("default");
+      private_class_method :new
+
+      def HazelcastCacheStore.getInstance
+        self.instance ||= new 
       end
 
-    end
-  end
-end
+      def initialize
+        @hostname = 'localhost' 
+        @username = 'dev' 
+        @password = 'dev-pass'
+        @mapname = 'default'
+        @options = parse_options
+        @client = HazelcastClient.newHazelcastClient(@username, @password, @host);
+        @map  = @client.getMap(@mapname);
+      end
+
+      def parse_options(app_root = Dir.pwd)
+         self.app_root = RAILS_ROOT + '/config/' if RAILS_ROOT 
+         self.app_root = app_root 
+         config_file = self.app_root + '/hazelcast.yml'
+
+         raise("Sorry, hazelcast.yml missing in application root ") if !File.exists?(config_file) 
+     
+         conf = YAML::load(ERB.new(IO.read(path)).result)[environment]
+  
+        conf.each do |key,value|
+         case key 
+          when 'hostname'
+           @hostname = value 
+          when 'username'
+           @username = value 
+          when 'password'
+           @password = value 
+          when 'mapname'
+           @mapname = value 
+        end unless conf.nil? 
+      end
+
+     end
+
+    end  #class HazelcastCacheSTore
+
+  end #module Cache
+
+end #Module ActiveSupport
 
 
