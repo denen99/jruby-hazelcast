@@ -83,6 +83,10 @@ $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) ||
 
      end
 
+     def keys
+      @map.keys
+     end
+
      def write(k,v)
         return unless k && v 
         @map.put(k,v)
