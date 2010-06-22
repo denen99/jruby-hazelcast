@@ -51,8 +51,8 @@ $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) ||
 
       def parse_options(app_root = Dir.pwd)
          if defined?(RAILS_ROOT)
-           self.app_root = RAILS_ROOT + '/config/' if defined?(RAILS_ROOT)
-           environment = RAILS_ENV
+           self.app_root = RAILS_ROOT + '/config/' 
+           environment = RAILS_ENV || 'production'
          else
            self.app_root = app_root 
            environment = ENV['JRUBY_HAZELCAST_ENV'] || 'production'
