@@ -1,9 +1,0 @@
-development:
-  host: localhost
-  username: username
-  password: password
-
-production:
-  host: prodserver
-  username: produsername
-  password: prodpassword

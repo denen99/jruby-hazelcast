@@ -21,74 +21,76 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
-require 'rubygems'
-require 'active_support'
-
 $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
-if defined?(JRUBY_VERSION)
   require 'java'
   require 'lib/hazelcast-client-1.8.4.jar'
-#  import com.hazelcast.core.Hazelcast;
+  require 'singleton'
+  require 'yaml'
+  require 'erb'
+
   import com.hazelcast.client.HazelcastClient;
   import java.util.Map;
-end
 
-module ActiveSupport
-
-  module Cache
-
-    class HazelcastCacheStore < Store
+  class HazelcastCacheClient
       
-      attr_accessor :app_root, :hostname, :username, :password
+      include Singleton
+      attr_accessor :client, :map, :app_root, :hostname, :username, :password
 
-      class << self; attr_accessor :instance; end
       class CacheException  < StandardError; end
-
-      private_class_method :new
-
-      def HazelcastCacheStore.getInstance
-        self.instance ||= new 
-      end
 
       def initialize
         @hostname = 'localhost' 
         @username = 'dev' 
         @password = 'dev-pass'
         @mapname = 'default'
-        @options = parse_options
-        @client = HazelcastClient.newHazelcastClient(@username, @password, @host);
+        parse_options
+        @client = HazelcastClient.newHazelcastClient(@username, @password, @hostname);
         @map  = @client.getMap(@mapname);
       end
 
       def parse_options(app_root = Dir.pwd)
-         self.app_root = RAILS_ROOT + '/config/' if RAILS_ROOT 
-         self.app_root = app_root 
-         config_file = self.app_root + '/hazelcast.yml'
+         if defined?(RAILS_ROOT)
+           self.app_root = RAILS_ROOT + '/config/' if defined?(RAILS_ROOT)
+           environment = RAILS_ENV
+         else
+           self.app_root = app_root 
+           environment = ENV['JRUBY_HAZELCAST_ENV'] || 'production'
+         end
 
-         raise("Sorry, hazelcast.yml missing in application root ") if !File.exists?(config_file) 
+         config_file = self.app_root + '/hazelcast.yml'
+         if !File.exists?(config_file) 
+           return puts "hazelcast.yml missing in directory " + self.app_root + ' , using defaults !!!' 
+           return false 
+         end
      
-         conf = YAML::load(ERB.new(IO.read(path)).result)[environment]
+         conf = YAML::load(ERB.new(IO.read(config_file)).result)[environment]
+         return if conf.nil? 
   
-        conf.each do |key,value|
-         case key 
-          when 'hostname'
-           @hostname = value 
-          when 'username'
-           @username = value 
-          when 'password'
-           @password = value 
-          when 'mapname'
-           @mapname = value 
-        end unless conf.nil? 
-      end
+         conf.each do |key,value|
+          case key 
+           when 'hostname'
+            @hostname = value 
+           when 'username'
+            @username = value 
+           when 'password'
+            @password = value 
+           when 'mapname'
+            @mapname = value 
+          end unless conf.nil? 
+
+         end
 
      end
 
-    end  #class HazelcastCacheSTore
+     def write(k,v)
+        return unless k && v 
+        @map.put(k,v)
+     end
 
-  end #module Cache
+     def read(k)
+       return unless k 
+       @map.get(k)
+     end
 
-end #Module ActiveSupport
-
-
+ end  #class HazelcastCache
