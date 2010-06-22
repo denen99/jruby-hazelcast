@@ -1,0 +1,8 @@
+production:
+
+  username: dev
+  password: dev-pass
+  hostname: 127.0.0.1
+  mapname: default 
+
+development:
