@@ -23,8 +23,10 @@
 
 $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
+  HAZELCAST_CLIENT_LIB = ENV['HAZELCAST_CLIENT_LIB'] || 'hazelcast-client-1.8.4.jar' 
+
   require 'java'
-  require 'lib/hazelcast-client-1.8.4.jar'
+  require HAZELCAST_CLIENT_LIB
   require 'singleton'
   require 'yaml'
   require 'erb'
@@ -83,16 +85,20 @@ $:.unshift(File.dirname(__FILE__)) unless $:.include?(File.dirname(__FILE__)) ||
 
      end
 
-     def keys
-      @map.keys
+     def values
+      @map.values.to_a
      end
 
-     def write(k,v)
+     def remove(k,v)
+       @map.remove(k,v)
+     end
+
+     def put(k,v)
         return unless k && v 
         @map.put(k,v)
      end
 
-     def read(k)
+     def get(k)
        return unless k 
        @map.get(k)
      end
