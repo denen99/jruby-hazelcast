@@ -1,0 +1,33 @@
+INSTALLING THE JRUBY-HAZELCAST GEM
+
+1) jgem install jruby-hazelcast
+
+2) paste the following code into a file called 'test.rb':
+
+///////////////////////////////////////////////////////
+require 'java'
+require 'rubygems'
+require 'jruby-hazelcast'
+
+key = rand
+value = rand 
+
+c = HazelcastCacheClient.instance
+c.put(key,value)
+
+resp = c.get(key)
+
+if resp == value 
+  puts "READ / WRITE WORKS !!"
+else
+  puts "Something went wrong !!"
+end
+
+c.client.shutdown
+/////////////////////////////////////////////////////////
+
+
+3)  start a hazelcast instance.  If you do not know how to do this, simply download the latest version of hazelcast, cd into the "bin/" directory and run the script "./run.sh"
+
+
+4) Run the test script by simply doing "jruby test.rb" from the command line, and you should see the "READ / WRITE WORKS" output to confirm everything is working as expected
